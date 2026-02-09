@@ -25,8 +25,10 @@ PARITY = serial.PARITY_NONE
 TIMEOUT = 2  # seconds
 
 # Regex matching CPWplus response format
-WEIGHT_RE = rb"[GN]/W\s*[+-]\s*([0-9.]+)\s*(?:lb|kg|oz)"
-SIGN_RE = rb"[GN]/W\s*(-)\s*[0-9.]"
+# The G/W or N/W prefix is optional — some firmware versions omit it,
+# sending just "+  0.58  lb\r\n" instead of "G/W  + 0.58 lb\r\n".
+WEIGHT_RE = rb"(?:[GN]/W\s*)?[+-]\s*([0-9.]+)\s+(?:lb|kg|oz)"
+SIGN_RE = rb"(?:[GN]/W\s*)?(-)\s*[0-9.]"
 
 # Default serial port
 DEFAULT_PORT = '/dev/ttyUSB0'
@@ -132,10 +134,13 @@ def test_probe(conn):
     print(f"  Probe response: {answer!r}")
 
     if b'G/W' in answer:
-        print("  RESULT: CPWplus IDENTIFIED (G/W found)")
+        print("  RESULT: CPWplus IDENTIFIED (G/W prefix found)")
         return True
     elif b'N/W' in answer:
-        print("  RESULT: CPWplus IDENTIFIED (N/W found)")
+        print("  RESULT: CPWplus IDENTIFIED (N/W prefix found)")
+        return True
+    elif re.search(rb'[+-]\s*[0-9.]+\s+(?:lb|kg|oz)', answer):
+        print("  RESULT: CPWplus IDENTIFIED (weight response pattern matched)")
         return True
     else:
         print("  RESULT: NOT identified as CPWplus")

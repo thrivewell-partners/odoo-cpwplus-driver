@@ -8,17 +8,18 @@
 # The built-in AdamEquipmentDriver targets the AZExtra series and uses
 # baud 4800, a kg-only regex, and a 5-second delay (the AZExtra beeps).
 # The CPWplus differs: baud 9600, multi-unit output (lb/kg/oz), no beep,
-# and a distinct "G/W" / "N/W" response prefix that allows positive probing.
+# and a weight response pattern that allows positive probing.
 #
 # CPWplus RS-232 command reference (from CPWplus User Manual):
-#   G  -> Gross weight   Response: "G/W  + 5.00 lb\r\n"
-#   N  -> Net weight     Response: "N/W  + 5.00 lb\r\n"
-#   T  -> Tare
-#   Z  -> Zero
+#   G  -> Gross weight   Response: "+  5.00  lb\r\n"
+#   N  -> Net weight     Response: "+  5.00  lb\r\n"
+#   T  -> Tare           Response: echoes current weight
+#   Z  -> Zero           Response: "<Z\r\n"
 #   P  -> Print (same as G but labelled for printers)
 #
-# Response format:  [G|N]/W  [+|-] <weight> <unit>\r\n
-#   where unit is one of: lb, kg, oz, lb:oz
+# Response format:  [+|-]  <weight>  <unit>\r\n
+#   where unit is one of: lb, kg, oz
+# Note: Some firmware versions include a G/W or N/W prefix; ours does not.
 
 import logging
 import re
@@ -42,24 +43,24 @@ _logger = logging.getLogger(__name__)
 #   "G/W  +  12.5 oz\r\n"   (gross weight in ounces)
 #
 # Pattern breakdown:
-#   [GN]/W      - G/W (gross) or N/W (net) prefix
-#   \s*         - optional whitespace
-#   ([+-])      - sign character (captured for negative detection)
+#   (?:[GN]/W\s*)? - optional G/W (gross) or N/W (net) prefix
+#   [+-]        - sign character
 #   \s*         - optional whitespace
 #   ([0-9.]+)   - the numeric weight (primary capture group)
-#   \s*         - optional whitespace
+#   \s+         - whitespace before unit
 #   (lb|kg|oz)  - unit suffix
 #
-# Note: We use TWO capture groups — group(1) is the sign, group(2) is the
-# number. But the base ScaleDriver._read_weight() only reads group(1) from
+# Note: The G/W prefix is optional because some CPWplus firmware versions
+# omit it, sending "+  0.58  lb\r\n" instead of "G/W  + 0.58 lb\r\n".
+# The base ScaleDriver._read_weight() only reads group(1) from
 # measureRegexp. So we put the number in group(1) and handle the sign
 # separately in our _read_weight() override.
 #
 # Simplified regex for measureRegexp (group 1 = weight number):
-CPW_MEASURE_REGEXP = rb"[GN]/W\s*[+-]\s*([0-9.]+)\s*(?:lb|kg|oz)"
+CPW_MEASURE_REGEXP = rb"(?:[GN]/W\s*)?[+-]\s*([0-9.]+)\s+(?:lb|kg|oz)"
 
 # Separate pattern to detect negative sign (used in _read_weight override):
-CPW_SIGN_REGEXP = rb"[GN]/W\s*(-)\s*[0-9.]"
+CPW_SIGN_REGEXP = rb"(?:[GN]/W\s*)?(-)\s*[0-9.]"
 
 CPWplusProtocol = SerialProtocol(
     name='Adam CPWplus',
@@ -152,7 +153,10 @@ class AdamCPWplusDriver(ScaleDriver):
                     device['identifier'], answer,
                 )
 
-                if b'G/W' in answer or b'N/W' in answer:
+                # Check for G/W prefix (some firmware) or weight
+                # pattern without prefix (e.g. "+  0.58  lb\r\n")
+                if (b'G/W' in answer or b'N/W' in answer
+                        or re.search(rb'[+-]\s*[0-9.]+\s+(?:lb|kg|oz)', answer)):
                     _logger.info(
                         'CPWplus identified on %s', device['identifier'],
                     )
