@@ -25,8 +25,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRIVER_PATH="${SCRIPT_DIR}/${DRIVER_FILE}"
 
 # IoT Box paths
-PERSISTENT_DIR="/root_bypass_ramdisks/home/pi/odoo/addons/hw_drivers/iot_handlers/drivers"
-ACTIVE_DIR="/home/pi/odoo/addons/hw_drivers/iot_handlers/drivers"
+PERSISTENT_DIR="/root_bypass_ramdisks/home/pi/odoo/addons/iot_drivers/iot_handlers/drivers"
+ACTIVE_DIR="/home/pi/odoo/addons/iot_drivers/iot_handlers/drivers"
 
 # --- Parse arguments ---
 IOT_IP="${1:-}"

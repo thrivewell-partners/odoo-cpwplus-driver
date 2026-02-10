@@ -19,8 +19,8 @@ set -euo pipefail
 # --- Configuration ---
 REPO_BASE="https://raw.githubusercontent.com/thrivewell-partners/odoo-cpwplus-driver/main"
 DRIVER_FILE="AdamCPWplusDriver.py"
-PERSISTENT_DIR="/root_bypass_ramdisks/home/pi/odoo/addons/hw_drivers/iot_handlers/drivers"
-ACTIVE_DIR="/home/pi/odoo/addons/hw_drivers/iot_handlers/drivers"
+PERSISTENT_DIR="/root_bypass_ramdisks/home/pi/odoo/addons/iot_drivers/iot_handlers/drivers"
+ACTIVE_DIR="/home/pi/odoo/addons/iot_drivers/iot_handlers/drivers"
 
 # Colors (if terminal supports them)
 RED='\033[0;31m'

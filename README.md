@@ -2,6 +2,8 @@
 
 Custom IoT Box driver connecting Adam Equipment CPWplus floor scales to Odoo Point of Sale via RS-232.
 
+**Compatible with Odoo 19** (iot_drivers module). See [CHANGES.md](CHANGES.md) for the Odoo 18 → 19 migration log.
+
 ## Why a Custom Driver?
 
 Odoo ships with an `AdamEquipmentDriver` built for the **AZExtra** series. The CPWplus has different protocol requirements:
@@ -121,6 +123,10 @@ Look for:
 | Driver disappears after reboot | Auto-update overwrites it | Disable automatic driver updates in IoT settings |
 | Permission denied on deploy | Pi filesystem is read-only | Run `mount -o remount,rw /` first |
 | "No weight match" in logs | Response format mismatch | Run `test_serial.py` to see raw responses |
+| Probe returns empty bytes `b''` | FTDI DTR/RTS flow control | Driver handles this automatically via `_disable_flow_control()` |
+| POS scale popup spins forever | Missing session/event tracking | Ensure `_do_action()` override is used (not `action()`) — see [CHANGES.md](CHANGES.md) |
+| `ModuleNotFoundError: hw_drivers` | Odoo 18 import paths on Odoo 19 | Update imports to `iot_drivers` + snake_case — see [CHANGES.md](CHANGES.md) |
+| `KeyError: 'result'` | Old data key `value` on Odoo 19 | Update `_read_weight()` to use `'result'` instead of `'value'` |
 
 ## Files
 
@@ -130,4 +136,5 @@ Look for:
 | `install.sh` | One-line installer — run on the Pi via `curl \| sudo bash` |
 | `deploy.sh` | Alternative: SSH-based deployment from your workstation |
 | `test_serial.py` | Pre-deployment serial communication test |
+| `CHANGES.md` | Odoo 18 → 19 migration log and POS hang fix details |
 | `README.md` | This file |

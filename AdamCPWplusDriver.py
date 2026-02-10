@@ -26,11 +26,11 @@ import re
 import serial
 import time
 
-from odoo.addons.hw_drivers.iot_handlers.drivers.SerialBaseDriver import (
+from odoo.addons.iot_drivers.iot_handlers.drivers.serial_base_driver import (
     SerialProtocol,
     serial_connection,
 )
-from odoo.addons.hw_drivers.iot_handlers.drivers.SerialScaleDriver import ScaleDriver
+from odoo.addons.iot_drivers.iot_handlers.drivers.serial_scale_driver import ScaleDriver
 
 _logger = logging.getLogger(__name__)
 
@@ -94,6 +94,17 @@ class AdamCPWplusDriver(ScaleDriver):
     _protocol = CPWplusProtocol
     priority = 10  # Higher than built-in AdamEquipmentDriver (priority=0)
 
+    @staticmethod
+    def _disable_flow_control(connection):
+        """Disable DTR/RTS hardware flow control lines.
+
+        FTDI USB-to-serial adapters on Pi IoT Boxes set DTR/RTS high by
+        default, which prevents the CPWplus from responding over RS-232.
+        """
+        connection.dtr = False
+        connection.rts = False
+        time.sleep(0.5)
+
     def __init__(self, identifier, device):
         super().__init__(identifier, device)
         self.device_manufacturer = 'Adam'
@@ -138,6 +149,7 @@ class AdamCPWplusDriver(ScaleDriver):
 
         try:
             with serial_connection(device['identifier'], protocol, is_probing=True) as connection:
+                cls._disable_flow_control(connection)
                 _logger.info(
                     'Probing %s with protocol %s',
                     device['identifier'], protocol.name,
@@ -180,6 +192,21 @@ class AdamCPWplusDriver(ScaleDriver):
         return False
 
     # ------------------------------------------------------------------
+    # DTR/RTS fix for continuous measurement and POS actions
+    # ------------------------------------------------------------------
+    def _take_measure(self):
+        """Apply flow control fix before measurement."""
+        if self._connection and self._connection.dtr:
+            self._disable_flow_control(self._connection)
+        super()._take_measure()
+
+    def _do_action(self, data):
+        """Apply DTR/RTS flow control fix before executing any POS action."""
+        if self._connection and self._connection.dtr:
+            self._disable_flow_control(self._connection)
+        super()._do_action(data)
+
+    # ------------------------------------------------------------------
     # Weight reading with negative sign handling
     # ------------------------------------------------------------------
     def _read_weight(self):
@@ -204,7 +231,7 @@ class AdamCPWplusDriver(ScaleDriver):
                 weight = -weight
 
             self.data = {
-                'value': weight,
+                'result': weight,
                 'status': self._status,
             }
         else:
@@ -212,7 +239,7 @@ class AdamCPWplusDriver(ScaleDriver):
             if answer:
                 _logger.debug('CPWplus: no weight match in response: %r', answer)
             self.data = {
-                'value': self.data.get('value', 0),
+                'result': self.data.get('result', 0),
                 'status': self._status,
             }
 
