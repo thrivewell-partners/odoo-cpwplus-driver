@@ -31,16 +31,48 @@ CPWplus DB9 → Null Modem Cable → USB-to-Serial Adapter → Pi USB Port
 
 ## Scale Configuration
 
-Before connecting to the IoT Box, configure the CPWplus via its setup menu:
+Before connecting to the IoT Box, configure the CPWplus RS-232 settings via its **User Parameters** menu.
 
-1. Press and hold **SETUP** until the display shows the first setting
-2. Navigate to **baud rate** → set to `b 9600`
-3. Navigate to **parity** → set to `nonE` (None)
-4. Navigate to **transmission mode** → set to `trn 1` (demand mode)
-5. Navigate to **units** → set to desired unit (`lb` for Henderson)
-6. Press **SETUP** to exit and save
+### Keypad Reference
+
+The CPWplus-35 has four buttons (no dedicated SETUP button):
+
+| Button | Normal Function | In Parameter Menu |
+|--------|----------------|-------------------|
+| **On/Off** | Power on/off | (used to enter menu) |
+| **Tare/Zero** | Tare / re-zero | Cycle through options for current parameter |
+| **Unit** | Switch lb/kg/oz | Confirm selection and advance to next parameter |
+| **Print/Hold** | Send weight via RS-232 | Exit parameter menu |
+
+### Entering User Parameters
+
+1. Turn the scale **off** (press **On/Off**)
+2. **Hold Tare/Zero**, then press **On/Off** momentarily
+3. **Release Tare/Zero** — the display shows the first user parameter
+
+### Setting RS-232 Parameters
+
+Once in the User Parameters menu, scroll through settings using **Unit** (next parameter) and **Tare/Zero** (cycle options):
+
+| Parameter | Display | Set To | How |
+|-----------|---------|--------|-----|
+| Baud rate | `b XXXX` | `b 9600` | Press **Tare/Zero** until `b 9600` appears, then **Unit** to confirm |
+| Parity | `nonE` / `odd` / `EvEn` | `nonE` | Press **Tare/Zero** until `nonE` appears, then **Unit** to confirm |
+| Transmission mode | `trn X` | `trn 1` | Press **Tare/Zero** until `trn 1` appears, then **Unit** to confirm |
+
+4. After confirming the last setting, press **Print/Hold** to exit (or turn off and back on)
+
+### Setting Units
+
+Units are changed during normal operation (not in the parameter menu):
+- Press **Unit** repeatedly to cycle through `lb` → `kg` → `oz`
+- Stop on `lb` for Henderson
 
 > **Important:** `trn 1` (demand mode) means the scale only sends weight when asked via the `G` command. Do NOT use `trn 2` (continuous/streaming mode) — the driver expects demand/response behavior.
+
+### Full Manual
+
+[Adam CPWplus Instruction Manual (PDF)](https://adamequipment.com/media/docs/manuals/CPWplus_UM_USA.pdf) — see sections on User Parameters and RS-232 Interface.
 
 ## Installation
 
